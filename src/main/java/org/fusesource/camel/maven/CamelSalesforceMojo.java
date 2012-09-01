@@ -17,12 +17,15 @@
 package org.fusesource.camel.maven;
 
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.log4j.Logger;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
-import org.apache.velocity.app.Velocity;
-import org.apache.velocity.runtime.RuntimeSingleton;
+import org.apache.velocity.app.VelocityEngine;
+import org.apache.velocity.runtime.RuntimeConstants;
+import org.apache.velocity.runtime.log.Log4JLogChute;
+import org.apache.velocity.runtime.resource.loader.ClasspathResourceLoader;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.fusesource.camel.component.salesforce.api.DefaultRestClient;
 import org.fusesource.camel.component.salesforce.api.RestClient;
@@ -52,6 +55,10 @@ public class CamelSalesforceMojo extends AbstractMojo
     private static final String PACKAGE_NAME_PATTERN = "^[a-z]+(\\.[a-z][a-z0-9]*)*$";
     private static final String SOBJECT_POJO_VM = "/sobject-pojo.vm";
     private static final String SOBJECT_QUERY_RECORDS_VM = "/sobject-query-records.vm";
+
+    // used for velocity logging, to avoid creating velocity.log
+    private static final Logger LOG = Logger.getLogger(CamelSalesforceMojo.class.getName());
+
     /**
      * Salesforce client id
      * @parameter expression="${clientId}"
@@ -123,6 +130,8 @@ public class CamelSalesforceMojo extends AbstractMojo
      */
     protected String packageName;
 
+    private VelocityEngine engine;
+
     /**
      * Execute the mojo to generate SObject POJOs
      * @throws MojoExecutionException
@@ -130,16 +139,18 @@ public class CamelSalesforceMojo extends AbstractMojo
     public void execute()
         throws MojoExecutionException
     {
-        // initialize velocity to load resources from class loader
+        // initialize velocity to load resources from class loader and use Log4J
         Properties velocityProperties = new Properties();
-        velocityProperties.setProperty("resource.loader", "cloader");
-        velocityProperties.setProperty("cloader.resource.loader.class", "org.apache.velocity.runtime.resource.loader.ClasspathResourceLoader");
-        RuntimeSingleton.init(velocityProperties);
-        Velocity.init();
+        velocityProperties.setProperty(RuntimeConstants.RESOURCE_LOADER, "cloader");
+        velocityProperties.setProperty("cloader.resource.loader.class", ClasspathResourceLoader.class.getName());
+        velocityProperties.setProperty(RuntimeConstants.RUNTIME_LOG_LOGSYSTEM_CLASS, Log4JLogChute.class.getName());
+        velocityProperties.setProperty(RuntimeConstants.RUNTIME_LOG_LOGSYSTEM + ".log4j.logger", getClass().getName());
+        engine = new VelocityEngine(velocityProperties);
+        engine.init();
 
         // make sure we can load both templates
-        if (!Velocity.resourceExists(SOBJECT_POJO_VM) ||
-            !Velocity.resourceExists(SOBJECT_QUERY_RECORDS_VM)) {
+        if (!engine.resourceExists(SOBJECT_POJO_VM) ||
+            !engine.resourceExists(SOBJECT_QUERY_RECORDS_VM)) {
             throw new MojoExecutionException("Velocity templates not found");
         }
 
@@ -292,7 +303,7 @@ public class CamelSalesforceMojo extends AbstractMojo
             context.put("desc", description);
             context.put("generatedDate", generatedDate);
 
-            Template pojoTemplate = Velocity.getTemplate(SOBJECT_POJO_VM);
+            Template pojoTemplate = engine.getTemplate(SOBJECT_POJO_VM);
             pojoTemplate.merge(context, writer);
 
         } catch (IOException e) {
@@ -320,7 +331,7 @@ public class CamelSalesforceMojo extends AbstractMojo
             context.put("desc", description);
             context.put("generatedDate", generatedDate);
 
-            Template queryTemplate = Velocity.getTemplate(SOBJECT_QUERY_RECORDS_VM);
+            Template queryTemplate = engine.getTemplate(SOBJECT_QUERY_RECORDS_VM);
             queryTemplate.merge(context, writer);
 
         } catch (IOException e) {
