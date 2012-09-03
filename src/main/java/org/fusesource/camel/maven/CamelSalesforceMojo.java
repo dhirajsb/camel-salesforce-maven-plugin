@@ -222,21 +222,34 @@ public class CamelSalesforceMojo extends AbstractMojo
                 }
             }
 
-            // default is to include everything
-            final Pattern incPattern = Pattern.compile(includePattern != null && !includePattern.trim().isEmpty() ?
-                includePattern.trim() : ".*");
+            // check whether a pattern is in effect
+            Pattern incPattern;
+            if (includePattern != null && !includePattern.trim().isEmpty()) {
+                incPattern = Pattern.compile(includePattern.trim());
+            } else if (includedNames.isEmpty()) {
+                // include everything by default if no include names are set
+                incPattern = Pattern.compile(".*");
+            } else {
+                // include nothing by default if include names are set
+                incPattern = Pattern.compile("^$");
+            }
 
-            // default is to exclude empty names
-            final Pattern excPattern = Pattern.compile(excludePattern != null && excludePattern.trim().isEmpty() ?
-                excludePattern.trim() : "^$");
+            // check whether a pattern is in effect
+            Pattern excPattern;
+            if (excludePattern != null && excludePattern.trim().isEmpty()) {
+                excPattern = Pattern.compile(excludePattern.trim());
+            } else {
+                // exclude nothing by default
+                excPattern = Pattern.compile("^$");
+            }
 
-            Set<String> acceptedNames = new HashSet<String>();
+            final Set<String> acceptedNames = new HashSet<String>();
             for (String name : objectNames) {
-                if (includedNames.contains(name) ||
-                    (!excludedNames.contains(name) &&
-                    incPattern.matcher(name).matches() &&
-                    !excPattern.matcher(name).matches())
-                    ) {
+                // name is included, or matches include pattern
+                // and is not excluded and does not match exclude pattern
+                if ((includedNames.contains(name) || incPattern.matcher(name).matches()) &&
+                    !excludedNames.contains(name) &&
+                    !excPattern.matcher(name).matches()) {
                     acceptedNames.add(name);
                 }
             }
