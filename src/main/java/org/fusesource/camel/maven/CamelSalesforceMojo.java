@@ -362,7 +362,8 @@ public class CamelSalesforceMojo extends AbstractMojo
 
             // create a type map
             // using JAXB mapping, for the most part
-            // TODO add support for commented types like dates
+            // uses Joda time instead of XmlGregorianCalendar
+            // TODO do we need support for commented types???
             final String[][] typeMap = new String[][] {
                 {"ID", "String"}, // mapping for tns:ID SOAP type
                 {"string", "String"},
@@ -376,19 +377,24 @@ public class CamelSalesforceMojo extends AbstractMojo
                 {"boolean", "Boolean"},
                 {"byte", "Byte"},
 //                {"QName", "javax.xml.namespace.QName"},
+
 //                {"dateTime", "javax.xml.datatype.XMLGregorianCalendar"},
-                {"dateTime", "String"},
+                {"dateTime", "org.joda.time.DateTime"},
+
 //                {"base64Binary", "byte[]"},
 //                {"hexBinary", "byte[]"},
+
                 {"unsignedInt", "Long"},
                 {"unsignedShort", "Integer"},
                 {"unsignedByte", "Short"},
+
 //                {"time", "javax.xml.datatype.XMLGregorianCalendar"},
-                {"time", "String"},
+                {"time", "org.joda.time.DateTime"},
 //                {"date", "javax.xml.datatype.XMLGregorianCalendar"},
-                {"date", "String"},
+                {"date", "org.joda.time.DateTime"},
 //                {"g", "javax.xml.datatype.XMLGregorianCalendar"},
-                {"g", "String"},
+                {"g", "org.joda.time.DateTime"},
+
 /*
                 {"anySimpleType", "java.lang.Object"},
                 {"anySimpleType", "java.lang.String"},
