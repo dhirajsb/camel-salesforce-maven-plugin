@@ -269,7 +269,7 @@ public class CamelSalesforceMojo extends AbstractMojo
         try {
             getLog().info("Retrieving Object descriptions...");
             for (String name : objectNames) {
-                descriptions.add(mapper.readValue(restClient.getSObjectDescription(name),
+                descriptions.add(mapper.readValue(restClient.getDescription(name),
                         SObjectDescription.class));
             }
         } catch (Exception e) {
