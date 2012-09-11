@@ -25,7 +25,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
-public class CamelSalesforceMojoTest {
+public class CamelSalesforceMojoIntegrationTest {
 
     private static final String TEST_LOGIN_PROPERTIES = "/test-login.properties";
 

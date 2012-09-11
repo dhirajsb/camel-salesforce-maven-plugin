@@ -9,6 +9,8 @@
     <camel.salesforce.version>1.0-SNAPSHOT</camel.salesforce.version>
     <velocity.version>1.7</velocity.version>
     <junit.version>4.9</junit.version>
+    <maven-plugin.version>2.9</maven-plugin.version>
+    <excluded.tests>**/*IntegrationTest.class</excluded.tests>
   </properties>
   <name>Maven Mojo for camel-salesforce Component</name>
   <url>https://github.com/dhirajsb/camel-salesforce-maven-plugin</url>
@@ -54,4 +56,31 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+
+  <build>
+    <plugins>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>${maven-plugin.version}</version>
+        <configuration>
+          <excludes>
+            <exclude>${excluded.tests}</exclude>
+          </excludes>
+        </configuration>
+      </plugin>
+
+    </plugins>
+  </build>
+
+  <profiles>
+    <profile>
+      <id>itests</id>
+      <properties>
+        <!-- Dummy pattern to avoid NPE -->
+        <excluded.tests>none</excluded.tests>
+      </properties>
+    </profile>
+  </profiles>
 </project>
