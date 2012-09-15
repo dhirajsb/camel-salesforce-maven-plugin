@@ -5,10 +5,21 @@
  */
 package $packageName;
 
+## add imports for XStreamConverter and PicklistEnumConverter if needed
+#set ( $hasPicklists = $utility.hasPicklists($desc) )
 import com.thoughtworks.xstream.annotations.XStreamAlias;
+#if ( $hasPicklists )
+import com.thoughtworks.xstream.annotations.XStreamConverter;
+#end
 import org.codehaus.jackson.annotate.JsonProperty;
+#if ( $hasPicklists )
+import org.fusesource.camel.component.salesforce.api.PicklistEnumConverter;
+#end
 import org.fusesource.camel.component.salesforce.api.dto.AbstractSObjectBase;
 
+/**
+ * Salesforce DTO for SObject $desc.Name
+ */
 @XStreamAlias("$desc.Name")
 public class $desc.Name extends AbstractSObjectBase {
 
@@ -17,6 +28,10 @@ public class $desc.Name extends AbstractSObjectBase {
 #set ( $fieldName = $field.Name )
 #set ( $fieldType = $utility.getFieldType($field) )
     // $fieldName
+## add a converter annotation if needed
+#if ( $utility.isPicklist($field) )
+    @XStreamConverter(PicklistEnumConverter.class)
+#end
     private $fieldType $fieldName;
 
     @JsonProperty("$fieldName")

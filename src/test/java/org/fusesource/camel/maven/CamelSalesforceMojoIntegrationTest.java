@@ -44,7 +44,7 @@ public class CamelSalesforceMojoIntegrationTest {
         mojo.packageName = "org.fusesource.camel.salesforce.dto";
 
         // set code generation properties
-        mojo.includePattern = ".*__c";
+        mojo.includePattern = "(.*__c)|(PushTopic)";
 
         // remove generated code directory
         if (mojo.outputDirectory.exists()) {

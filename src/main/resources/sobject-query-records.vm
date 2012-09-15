@@ -10,6 +10,9 @@ import org.fusesource.camel.component.salesforce.api.dto.AbstractQueryRecordsBas
 
 import java.util.List;
 
+/**
+ * Salesforce QueryRecords DTO for type $desc.Name
+ */
 #set( $descName = $desc.Name )
 public class QueryRecords$descName extends AbstractQueryRecordsBase {
 
