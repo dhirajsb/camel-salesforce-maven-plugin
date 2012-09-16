@@ -39,7 +39,7 @@ public enum $enumName {
     }
 
     @JsonCreator
-    public static $enumName forValue(String value) {
+    public static $enumName fromValue(String value) {
 #set ( $allValues = ".values()" )
         for ($enumName e : $enumName$allValues) {
             if (e.value.equals(value)) {
