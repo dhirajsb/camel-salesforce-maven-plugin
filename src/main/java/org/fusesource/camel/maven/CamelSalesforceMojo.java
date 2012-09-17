@@ -28,11 +28,11 @@ import org.apache.velocity.runtime.log.Log4JLogChute;
 import org.apache.velocity.runtime.resource.loader.ClasspathResourceLoader;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.fusesource.camel.component.salesforce.SalesforceComponent;
-import org.fusesource.camel.component.salesforce.api.DefaultRestClient;
-import org.fusesource.camel.component.salesforce.api.RestClient;
 import org.fusesource.camel.component.salesforce.api.RestException;
-import org.fusesource.camel.component.salesforce.api.SalesforceSession;
 import org.fusesource.camel.component.salesforce.api.dto.*;
+import org.fusesource.camel.component.salesforce.internal.SalesforceSession;
+import org.fusesource.camel.component.salesforce.internal.client.DefaultRestClient;
+import org.fusesource.camel.component.salesforce.internal.client.RestClient;
 
 import java.io.BufferedWriter;
 import java.io.File;
