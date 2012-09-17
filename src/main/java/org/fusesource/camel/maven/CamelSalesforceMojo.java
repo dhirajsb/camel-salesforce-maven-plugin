@@ -28,7 +28,7 @@ import org.apache.velocity.runtime.log.Log4JLogChute;
 import org.apache.velocity.runtime.resource.loader.ClasspathResourceLoader;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.fusesource.camel.component.salesforce.SalesforceComponent;
-import org.fusesource.camel.component.salesforce.api.RestException;
+import org.fusesource.camel.component.salesforce.api.SalesforceException;
 import org.fusesource.camel.component.salesforce.api.dto.*;
 import org.fusesource.camel.component.salesforce.internal.SalesforceSession;
 import org.fusesource.camel.component.salesforce.internal.client.DefaultRestClient;
@@ -164,7 +164,7 @@ public class CamelSalesforceMojo extends AbstractMojo
         getLog().info("Salesforce login...");
         try {
             session.login(null);
-        } catch (RestException e) {
+        } catch (SalesforceException e) {
             String msg = "Salesforce login error " + e.getMessage();
             getLog().error(msg, e);
             throw new MojoExecutionException(msg, e);
@@ -309,7 +309,7 @@ public class CamelSalesforceMojo extends AbstractMojo
             // Salesforce logout
             try {
                 session.logout();
-            } catch (RestException e) {
+            } catch (SalesforceException e) {
                 // ignore
             }
 
