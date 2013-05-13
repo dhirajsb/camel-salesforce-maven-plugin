@@ -16,7 +16,6 @@
 
 package org.fusesource.camel.maven;
 
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.log4j.Logger;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -27,12 +26,15 @@ import org.apache.velocity.runtime.RuntimeConstants;
 import org.apache.velocity.runtime.log.Log4JLogChute;
 import org.apache.velocity.runtime.resource.loader.ClasspathResourceLoader;
 import org.codehaus.jackson.map.ObjectMapper;
-import org.fusesource.camel.component.salesforce.SalesforceComponent;
+import org.eclipse.jetty.client.HttpClient;
+import org.eclipse.jetty.client.RedirectListener;
+import org.fusesource.camel.component.salesforce.SalesforceLoginConfig;
 import org.fusesource.camel.component.salesforce.api.SalesforceException;
 import org.fusesource.camel.component.salesforce.api.dto.*;
 import org.fusesource.camel.component.salesforce.internal.SalesforceSession;
 import org.fusesource.camel.component.salesforce.internal.client.DefaultRestClient;
 import org.fusesource.camel.component.salesforce.internal.client.RestClient;
+import org.fusesource.camel.component.salesforce.internal.client.SyncResponseCallback;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -40,6 +42,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 /**
@@ -60,6 +63,7 @@ public class CamelSalesforceMojo extends AbstractMojo
 
     // used for velocity logging, to avoid creating velocity.log
     private static final Logger LOG = Logger.getLogger(CamelSalesforceMojo.class.getName());
+    private static final int TIMEOUT = 60000;
 
     /**
      * Salesforce client id
@@ -157,33 +161,57 @@ public class CamelSalesforceMojo extends AbstractMojo
         }
 
         // connect to Salesforce
-        final DefaultHttpClient httpClient = new DefaultHttpClient();
+        final HttpClient httpClient = new HttpClient();
+        httpClient.registerListener(RedirectListener.class.getName());
+        httpClient.setConnectTimeout(TIMEOUT);
+        httpClient.setTimeout(TIMEOUT);
+        try {
+            httpClient.start();
+        } catch (Exception e) {
+            throw new MojoExecutionException("Error creating HTTP client: " + e.getMessage(), e);
+        }
+
         final SalesforceSession session = new SalesforceSession(httpClient,
-            SalesforceComponent.DEFAULT_LOGIN_URL,
-            clientId, clientSecret, userName, password);
+            new SalesforceLoginConfig(SalesforceLoginConfig.DEFAULT_LOGIN_URL,
+            clientId, clientSecret, userName, password, false));
+
         getLog().info("Salesforce login...");
         try {
             session.login(null);
         } catch (SalesforceException e) {
             String msg = "Salesforce login error " + e.getMessage();
-            getLog().error(msg, e);
             throw new MojoExecutionException(msg, e);
         }
         getLog().info("Salesforce login successful");
 
         try {
             // create rest client
-            final RestClient restClient = new DefaultRestClient(httpClient,
-                version, "json", session);
+            final RestClient restClient;
+            try {
+                restClient = new DefaultRestClient(httpClient,
+                    version, "json", session);
+            } catch (SalesforceException e) {
+                final String msg = "Unexpected exception creating Rest client: " + e.getMessage();
+                throw new MojoExecutionException(msg, e);
+            }
 
             // use Jackson json
             final ObjectMapper mapper = new ObjectMapper();
 
             // call getGlobalObjects to get all SObjects
             final Set<String> objectNames = new HashSet<String>();
+            final SyncResponseCallback callback = new SyncResponseCallback();
             try {
                 getLog().info("Getting Salesforce Objects...");
-                final GlobalObjects globalObjects = mapper.readValue(restClient.getGlobalObjects(),
+                restClient.getGlobalObjects(callback);
+                if (!callback.await(TIMEOUT, TimeUnit.MILLISECONDS)) {
+                    throw new MojoExecutionException("Timeout waiting for getGlobalObjects!");
+                }
+                final SalesforceException ex = callback.getException();
+                if (ex != null) {
+                    throw ex;
+                }
+                final GlobalObjects globalObjects = mapper.readValue(callback.getResponse(),
                     GlobalObjects.class);
 
                 // create a list of object names
@@ -192,7 +220,6 @@ public class CamelSalesforceMojo extends AbstractMojo
                 }
             } catch (Exception e) {
                 String msg = "Error getting global Objects " + e.getMessage();
-                getLog().error(msg, e);
                 throw new MojoExecutionException(msg, e);
             }
 
@@ -240,7 +267,7 @@ public class CamelSalesforceMojo extends AbstractMojo
 
                 // check whether a pattern is in effect
                 Pattern excPattern;
-                if (excludePattern != null && excludePattern.trim().isEmpty()) {
+                if (excludePattern != null && !excludePattern.trim().isEmpty()) {
                     excPattern = Pattern.compile(excludePattern.trim());
                 } else {
                     // exclude nothing by default
@@ -273,12 +300,21 @@ public class CamelSalesforceMojo extends AbstractMojo
             try {
                 getLog().info("Retrieving Object descriptions...");
                 for (String name : objectNames) {
-                    descriptions.add(mapper.readValue(restClient.getDescription(name),
+                    callback.reset();
+                    restClient.getDescription(name, callback);
+                    if (!callback.await(TIMEOUT, TimeUnit.MILLISECONDS)) {
+                        throw new MojoExecutionException(
+                            "Timeout waiting for getDescription for sObject " + name);
+                    }
+                    final SalesforceException ex = callback.getException();
+                    if (ex != null) {
+                        throw ex;
+                    }
+                    descriptions.add(mapper.readValue(callback.getResponse(),
                             SObjectDescription.class));
                 }
             } catch (Exception e) {
                 String msg = "Error getting SObject description " + e.getMessage();
-                getLog().error(msg, e);
                 throw new MojoExecutionException(msg, e);
             }
 
@@ -314,7 +350,10 @@ public class CamelSalesforceMojo extends AbstractMojo
             }
 
             // release HttpConnections
-            httpClient.getConnectionManager().shutdown();
+            try {
+                httpClient.stop();
+            } catch (Exception ignore) {
+            }
         }
     }
 
@@ -374,9 +413,8 @@ public class CamelSalesforceMojo extends AbstractMojo
             // close QueryRecords file
             writer.close();
 
-        } catch (IOException e) {
+        } catch (Exception e) {
             String msg = "Error creating " + fileName + ": " + e.getMessage();
-            getLog().error(msg, e);
             throw new MojoExecutionException(msg, e);
         } finally {
             if (writer != null) {
@@ -495,7 +533,7 @@ public class CamelSalesforceMojo extends AbstractMojo
         public String getEnumConstant(String value) {
 
             // TODO add support for supplementary characters
-            final StringBuffer result = new StringBuffer();
+            final StringBuilder result = new StringBuilder();
             boolean changed = false;
             if (!Character.isJavaIdentifierStart(value.charAt(0))) {
                 result.append("_");

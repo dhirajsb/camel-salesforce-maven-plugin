@@ -39,12 +39,13 @@ public class CamelSalesforceMojoIntegrationTest {
         setLoginProperties(mojo);
 
         // set defaults
-        mojo.version = "25.0";
+        mojo.version = "27.0";
         mojo.outputDirectory = new File("target/generated-sources/camel-salesforce");
         mojo.packageName = "org.fusesource.camel.salesforce.dto";
 
         // set code generation properties
         mojo.includePattern = "(.*__c)|(PushTopic)";
+//        mojo.excludePattern = "(.*History.*)|(.*Feed)|(Feed*)|(Document)|(MailMergeTemplate)";
 
         // remove generated code directory
         if (mojo.outputDirectory.exists()) {
