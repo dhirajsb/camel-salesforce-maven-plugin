@@ -184,17 +184,19 @@ public class CamelSalesforceMojo extends AbstractMojo
         }
         getLog().info("Salesforce login successful");
 
+        // create rest client
+        RestClient restClient = null;
         try {
-            // create rest client
-            final RestClient restClient;
-            try {
-                restClient = new DefaultRestClient(httpClient,
-                    version, "json", session);
-            } catch (SalesforceException e) {
-                final String msg = "Unexpected exception creating Rest client: " + e.getMessage();
-                throw new MojoExecutionException(msg, e);
-            }
+            restClient = new DefaultRestClient(httpClient,
+                version, "json", session);
+            // remember to start the active client object
+            ((DefaultRestClient)restClient).start();
+        } catch (Exception e) {
+            final String msg = "Unexpected exception creating Rest client: " + e.getMessage();
+            throw new MojoExecutionException(msg, e);
+        }
 
+        try {
             // use Jackson json
             final ObjectMapper mapper = new ObjectMapper();
 
@@ -342,18 +344,20 @@ public class CamelSalesforceMojo extends AbstractMojo
             getLog().info("Successfully generated " + (descriptions.size() * 2) + " Java Classes");
 
         } finally {
-            // Salesforce logout
+            // remember to stop the client
             try {
-                session.logout();
-            } catch (SalesforceException e) {
-                // ignore
-            }
+                ((DefaultRestClient)restClient).stop();
+            } catch (Exception ignore) {}
+
+            // Salesforce session stop
+            try {
+                session.stop();
+            } catch (Exception ignore) {}
 
             // release HttpConnections
             try {
                 httpClient.stop();
-            } catch (Exception ignore) {
-            }
+            } catch (Exception ignore) {}
         }
     }
 
@@ -420,9 +424,7 @@ public class CamelSalesforceMojo extends AbstractMojo
             if (writer != null) {
                 try {
                     writer.close();
-                } catch (IOException e) {
-                    // ignore
-                }
+                } catch (IOException ignore) {}
             }
         }
     }
