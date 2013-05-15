@@ -289,10 +289,11 @@ public class CamelSalesforceMojo extends AbstractMojo
                 objectNames.clear();
                 objectNames.addAll(acceptedNames);
 
-                getLog().info("Found " + objectNames.size() + " matching Objects");
+                getLog().info(String.format("Found %s matching Objects", objectNames.size()));
 
             } else {
-                getLog().warn("Generating Java classes for all " + objectNames.size() + " Objects, this may take a while...");
+                getLog().warn(String.format("Generating Java classes for all %s Objects, this may take a while...",
+                    objectNames.size()));
             }
 
             // for every accepted name, get SObject description
@@ -341,7 +342,7 @@ public class CamelSalesforceMojo extends AbstractMojo
                 processDescription(pkgDir, description, utility, generatedDate);
             }
 
-            getLog().info("Successfully generated " + (descriptions.size() * 2) + " Java Classes");
+            getLog().info(String.format("Successfully generated %s Java Classes", (descriptions.size() * 2)));
 
         } finally {
             // remember to stop the client
@@ -510,8 +511,8 @@ public class CamelSalesforceMojo extends AbstractMojo
                 final String soapType = field.getSoapType();
                 final String type = lookupMap.get(soapType.substring(soapType.indexOf(':')+1));
                 if (type == null) {
-                    String msg = String.format("Unsupported type %s for field %s", soapType, field.getName());
-                    throw new MojoExecutionException(msg);
+                    throw new MojoExecutionException(
+                        String.format("Unsupported type %s for field %s", soapType, field.getName()));
                 }
                 return type;
             }
