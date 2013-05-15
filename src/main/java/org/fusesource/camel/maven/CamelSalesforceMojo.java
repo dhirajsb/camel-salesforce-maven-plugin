@@ -461,7 +461,8 @@ public class CamelSalesforceMojo extends AbstractMojo
 //                {"dateTime", "javax.xml.datatype.XMLGregorianCalendar"},
                 {"dateTime", "org.joda.time.DateTime"},
 
-//                {"base64Binary", "byte[]"},
+                // the blob base64Binary type is mapped to String URL for retrieving the blob
+                {"base64Binary", "String"},
 //                {"hexBinary", "byte[]"},
 
                 {"unsignedInt", "Long"},
@@ -486,6 +487,13 @@ public class CamelSalesforceMojo extends AbstractMojo
             for (String[] entry : typeMap) {
                 lookupMap.put(entry[0], entry[1]);
             }
+        }
+
+        private static final String BASE64BINARY = "base64Binary";
+
+        public boolean isBlobField(SObjectField field) {
+            final String soapType = field.getSoapType();
+            return BASE64BINARY.equals(soapType.substring(soapType.indexOf(':')+1));
         }
 
         public boolean notBaseField(String name) {

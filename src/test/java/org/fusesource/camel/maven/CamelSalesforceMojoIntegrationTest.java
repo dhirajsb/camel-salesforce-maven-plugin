@@ -45,7 +45,8 @@ public class CamelSalesforceMojoIntegrationTest {
 
         // set code generation properties
         mojo.includePattern = "(.*__c)|(PushTopic)";
-//        mojo.excludePattern = "(.*History.*)|(.*Feed)|(Feed*)|(Document)|(MailMergeTemplate)";
+//        mojo.includePattern = "(Document)";
+//        mojo.excludePattern = "(.*History)|(.*Feed)|(Feed.*)";
 
         // remove generated code directory
         if (mojo.outputDirectory.exists()) {

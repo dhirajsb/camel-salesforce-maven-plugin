@@ -28,20 +28,31 @@ public class $desc.Name extends AbstractSObjectBase {
 #set ( $fieldName = $field.Name )
 #set ( $fieldType = $utility.getFieldType($field) )
     // $fieldName
+#if ( $utility.isBlobField($field) )
+#set ( $propertyName = $fieldName + "Url" )
+#else
+#set ( $propertyName = $fieldName )
+#end
 ## add a converter annotation if needed
 #if ( $utility.isPicklist($field) )
     @XStreamConverter(PicklistEnumConverter.class)
+#else
+## add an alias for blob field url if needed
+#if ( $propertyName != $fieldName )
+    // blob field url, use getBlobField to get the content
+    @XStreamAlias("$fieldName")
 #end
-    private $fieldType $fieldName;
+#end
+    private $fieldType $propertyName;
 
     @JsonProperty("$fieldName")
-    public $fieldType get$fieldName() {
-        return this.$fieldName;
+    public $fieldType get$propertyName() {
+        return this.$propertyName;
     }
 
     @JsonProperty("$fieldName")
-    public void set$fieldName($fieldType $fieldName) {
-        this.$fieldName = $fieldName;
+    public void set$propertyName($fieldType $propertyName) {
+        this.$propertyName = $propertyName;
     }
 
 #end
