@@ -11,6 +11,8 @@
     <junit.version>4.9</junit.version>
     <maven-plugin.version>2.9</maven-plugin.version>
     <excluded.tests>**/*IntegrationTest.class</excluded.tests>
+    <slf4j-api.version>1.6.1</slf4j-api.version>
+    <log4j.version>1.2.16</log4j.version>
   </properties>
   <name>Maven Mojo for camel-salesforce Component</name>
   <url>https://github.com/dhirajsb/camel-salesforce-maven-plugin</url>
@@ -35,17 +37,17 @@
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
-      <version>1.6.1</version>
+      <version>${slf4j-api.version}</version>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-log4j12</artifactId>
-      <version>1.6.1</version>
+      <version>${slf4j-api.version}</version>
     </dependency>
     <dependency>
       <groupId>log4j</groupId>
       <artifactId>log4j</artifactId>
-      <version>1.2.16</version>
+      <version>${log4j.version}</version>
     </dependency>
 
     <!-- testing -->
