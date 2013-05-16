@@ -477,6 +477,8 @@ public class CamelSalesforceMojo extends AbstractMojo
 //                {"g", "javax.xml.datatype.XMLGregorianCalendar"},
                 {"g", "org.joda.time.DateTime"},
 
+                // Salesforce maps any types like string, picklist, reference, etc. to string
+                {"anyType", "String"},
 /*
                 {"anySimpleType", "java.lang.Object"},
                 {"anySimpleType", "java.lang.String"},
